@@ -1,0 +1,68 @@
+body {
+  font-family: sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f4f4f4;
+  color: #333;
+}
+
+.App {
+  text-align: center;
+  padding: 20px;
+}
+
+.App-header {
+  background-color: #007bff;
+  padding: 20px;
+  color: white;
+  margin-bottom: 30px;
+  border-radius: 5px;
+}
+
+.App-header h1 {
+  margin: 0;
+  font-size: 2em;
+}
+
+/* Page specific styling can go into HomePage.css and AboutPage.css if needed,
+   or be defined here with more specific selectors */
+
+div > h1 { /* Targeting h1 within HomePage and AboutPage specifically if they are direct children of the main div */
+  color: #333;
+  margin-bottom: 20px;
+}
+
+p {
+  font-size: 1.1em;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 4px 2px;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+/* Styling for links if not using buttons, or for other links */
+a {
+  color: #007bff;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
