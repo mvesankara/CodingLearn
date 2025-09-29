@@ -93,8 +93,8 @@ const HomePage = () => {
           La plateforme francophone qui transforme votre curiosité du code en
           compétences concrètes.
         </p>
-        <Link to="/about" className="hero__cta">
-          En savoir plus
+        <Link to="/register" className="hero__cta">
+          Créer mon compte gratuit
         </Link>
       </section>
 
@@ -175,7 +175,7 @@ const HomePage = () => {
           <h2 id="signup-heading">Prêt·e à vous lancer&nbsp;?</h2>
           <p>Créez votre compte et commencez votre premier module gratuitement.</p>
         </div>
-        <Link className="hero__cta" to="/about">
+        <Link className="hero__cta" to="/register">
           Je m’inscris maintenant
         </Link>
       </section>
