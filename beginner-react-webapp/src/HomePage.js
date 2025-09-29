@@ -83,7 +83,7 @@ const HomePage = () => {
 
   return (
     <main className="homepage">
-      <section className="hero">
+      <section className="hero" id="accueil">
         <h1>Bienvenue sur CodingLearn</h1>
         <p>
           La plateforme francophone qui transforme votre curiosité du code en
@@ -106,7 +106,11 @@ const HomePage = () => {
         </div>
       </section>
 
-      <section className="section section--accent" aria-labelledby="learn-heading">
+      <section
+        className="section section--accent"
+        aria-labelledby="learn-heading"
+        id="parcours"
+      >
         <div className="section__header">
           <h2 id="learn-heading">Ce que vous apprendrez</h2>
           <p>
@@ -133,7 +137,7 @@ const HomePage = () => {
         </div>
       </section>
 
-      <section className="section" aria-labelledby="pricing-heading">
+      <section className="section" aria-labelledby="pricing-heading" id="tarifs">
         <div className="section__header">
           <h2 id="pricing-heading">Nos packs tarifaires</h2>
           <p>Choisissez l’accompagnement qui correspond à votre objectif.</p>
@@ -143,6 +147,33 @@ const HomePage = () => {
             <PricingTier key={tier.name} {...tier} />
           ))}
         </div>
+      </section>
+
+      <section className="section section--contact" id="contact" aria-labelledby="contact-heading">
+        <div className="section__header">
+          <h2 id="contact-heading">Une question&nbsp;?</h2>
+          <p>Notre équipe vous répond en moins de 24&nbsp;heures.</p>
+        </div>
+        <div className="contact-content">
+          <p>
+            Écrivez-nous à <a href="mailto:bonjour@codinglearn.fr">bonjour@codinglearn.fr</a> ou
+            planifiez un rendez-vous téléphonique pour discuter de votre projet.
+          </p>
+          <p>
+            Vous pouvez également rejoindre notre communauté Discord pour poser vos questions et
+            échanger avec d’autres apprenant·e·s.
+          </p>
+        </div>
+      </section>
+
+      <section className="section section--cta" id="signup" aria-labelledby="signup-heading">
+        <div className="section__header">
+          <h2 id="signup-heading">Prêt·e à vous lancer&nbsp;?</h2>
+          <p>Créez votre compte et commencez votre premier module gratuitement.</p>
+        </div>
+        <Link className="hero__cta" to="/about">
+          Je m’inscris maintenant
+        </Link>
       </section>
     </main>
   );
