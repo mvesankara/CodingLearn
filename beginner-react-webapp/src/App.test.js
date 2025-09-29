@@ -3,6 +3,6 @@ import App from './App';
 
 test("affiche l'accueil par défaut", () => {
   render(<App />);
-  const heading = screen.getByRole('heading', { name: /welcome to my first web app!/i });
+  const heading = screen.getByRole('heading', { name: /bienvenue sur codinglearn/i });
   expect(heading).toBeInTheDocument();
 });
