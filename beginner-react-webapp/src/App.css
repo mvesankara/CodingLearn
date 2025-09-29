@@ -130,6 +130,24 @@ a:hover {
 .hero > * {
   position: relative;
   z-index: 1;
+
+}
+
+.hero__brand {
+  width: clamp(140px, 24vw, 220px);
+  margin: 0 auto 1.75rem;
+  display: flex;
+  justify-content: center;
+}
+
+.hero__brand img {
+  width: 100%;
+  height: auto;
+  display: block;
+  filter: drop-shadow(0 14px 26px rgba(9, 33, 58, 0.45));
+  border-radius: 18px;
+
+
 }
 
 .hero h1 {
@@ -370,6 +388,7 @@ a:hover {
   box-shadow: 0 16px 32px rgba(246, 193, 67, 0.42);
 }
 
+
 .section--contact {
   background: rgba(255, 250, 240, 0.9);
   border-radius: var(--radius-lg);
@@ -398,6 +417,38 @@ a:hover {
 .section--cta .hero__cta {
   margin: 0 auto;
 }
+
+
+
+.section--contact {
+  background: rgba(255, 250, 240, 0.9);
+  border-radius: var(--radius-lg);
+  padding: 3rem clamp(1.5rem, 4vw, 3.5rem);
+  box-shadow: 0 16px 32px rgba(13, 59, 102, 0.08);
+  border: 1px solid rgba(246, 193, 67, 0.25);
+}
+
+.section--contact a {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+.section--cta {
+  background: linear-gradient(135deg, rgba(246, 193, 67, 0.92), rgba(255, 222, 134, 0.9));
+  border-radius: var(--radius-lg);
+  padding: 3rem clamp(1.5rem, 4vw, 3.5rem);
+  box-shadow: 0 22px 44px rgba(246, 193, 67, 0.25);
+  text-align: center;
+}
+
+.section--cta .section__header p {
+  color: rgba(15, 31, 47, 0.8);
+}
+
+.section--cta .hero__cta {
+  margin: 0 auto;
+}
+
 
 form {
   background-color: var(--color-surface);

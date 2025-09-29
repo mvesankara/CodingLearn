@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import FeatureCard from './components/FeatureCard';
 import Testimonial from './components/Testimonial';
 import PricingTier from './components/PricingTier';
+import brandLogo from './assets/codinglearn-logo.svg';
 
 const HomePage = () => {
   const features = [
@@ -84,6 +85,9 @@ const HomePage = () => {
   return (
     <main className="homepage">
       <section className="hero" id="accueil">
+        <div className="hero__brand" aria-hidden="true">
+          <img src={brandLogo} alt="" />
+        </div>
         <h1>Bienvenue sur CodingLearn</h1>
         <p>
           La plateforme francophone qui transforme votre curiosité du code en

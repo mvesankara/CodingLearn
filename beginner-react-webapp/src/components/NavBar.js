@@ -1,6 +1,9 @@
 import React from 'react';
+
+
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+
 import './NavBar.css';
 
 const NavBar = () => {
@@ -14,9 +17,16 @@ const NavBar = () => {
 
   return (
     <nav className="navbar">
+
+      <a className="navbar__brand" href="#accueil" aria-label="Revenir à l'accueil CodingLearn">
+        <img className="navbar__brand-mark" src={brandLogo} alt="Logo CodingLearn" />
+        <span className="navbar__brand-text">CodingLearn</span>
+      </a>
+
       <Link className="navbar__logo" to="/">
         CodingLearn
       </Link>
+
       <ul className="navbar__links">
         <li>
           <NavLink to="/" end>
