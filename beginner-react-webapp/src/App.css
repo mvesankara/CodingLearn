@@ -48,14 +48,44 @@ p {
 }
 
 button {
-  background-color: #0066ff;
-  color: white;
-
   margin: 0;
   font-family: 'Inter', 'Segoe UI', Roboto, sans-serif;
-  background-color: var(--color-background);
-  color: var(--color-text);
+  background-color: var(--color-primary);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1.5rem;
   line-height: 1.6;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+button:hover,
+button:focus {
+  background-color: var(--color-primary-dark);
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px rgba(79, 70, 229, 0.25);
+}
+
+button:focus-visible {
+  outline: 3px solid rgba(79, 70, 229, 0.45);
+  outline-offset: 2px;
+}
+
+button:disabled {
+  background-color: rgba(79, 70, 229, 0.4);
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+button:disabled:hover,
+button:disabled:focus {
+  background-color: rgba(79, 70, 229, 0.4);
+  box-shadow: none;
+  transform: none;
 }
 
 a {
@@ -280,14 +310,20 @@ a:hover {
 }
 
 .pricing-tier__cta {
-  background-color: var(--color-primary);
-  color: #ffffff;
-
   border: none;
   border-radius: 999px;
   padding: 0.75rem 1.6rem;
   font-weight: 600;
   cursor: pointer;
+
+  background-color: var(--color-primary);
+  color: #ffffff;
+  transition: background-color 0.2s ease, transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.pricing-tier__cta:hover,
+.pricing-tier__cta:focus-visible {
+
 
   transition: background-color 0.2s ease, transform 0.2s ease;
 }
@@ -298,8 +334,10 @@ button:hover {
 }
 
 .pricing-tier__cta:hover {
+
   background-color: var(--color-primary-dark);
   transform: translateY(-2px);
+  box-shadow: 0 14px 25px rgba(79, 70, 229, 0.25);
 }
 
 @media (max-width: 600px) {
