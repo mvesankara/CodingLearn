@@ -6,6 +6,7 @@ import './NavBar.css';
 const NavBar = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const LinkComponent = NavLink ?? Link;
 
   const handleLogout = () => {
     logout();
@@ -19,9 +20,9 @@ const NavBar = () => {
       </Link>
       <ul className="navbar__links">
         <li>
-          <NavLink to="/" end>
+          <LinkComponent to="/" {...(NavLink ? { end: true } : {})}>
             Accueil
-          </NavLink>
+          </LinkComponent>
         </li>
         <li>
           <Link to="/#parcours">Parcours</Link>
@@ -33,27 +34,27 @@ const NavBar = () => {
           <Link to="/#contact">Contact</Link>
         </li>
         <li>
-          <NavLink to="/about">À propos</NavLink>
+          <LinkComponent to="/about">À propos</LinkComponent>
         </li>
       </ul>
       <div className="navbar__actions">
         {user ? (
           <>
-            <NavLink className="navbar__link" to="/dashboard">
+            <LinkComponent className="navbar__link" to="/dashboard">
               Tableau de bord
-            </NavLink>
+            </LinkComponent>
             <button type="button" className="navbar__logout" onClick={handleLogout}>
               Se déconnecter
             </button>
           </>
         ) : (
           <>
-            <NavLink className="navbar__link" to="/login">
+            <LinkComponent className="navbar__link" to="/login">
               Se connecter
-            </NavLink>
-            <NavLink className="navbar__cta" to="/register">
+            </LinkComponent>
+            <LinkComponent className="navbar__cta" to="/register">
               Commencer gratuitement
-            </NavLink>
+            </LinkComponent>
           </>
         )}
       </div>
