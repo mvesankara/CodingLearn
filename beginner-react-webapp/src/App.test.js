@@ -1,8 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import App from './App';
 
-test('renders learn react link', () => {
+test("affiche l'accueil par défaut", () => {
   render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
-  expect(linkElement).toBeInTheDocument();
+  const heading = screen.getByRole('heading', { name: /welcome to my first web app!/i });
+  expect(heading).toBeInTheDocument();
 });
