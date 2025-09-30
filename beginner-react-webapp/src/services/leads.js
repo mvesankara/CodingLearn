@@ -1,25 +1,21 @@
-const DELAY_MS = 400;
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:4000/api';
 
-/**
- * Envoie les informations de lead vers notre CRM.
- * @param {{name: string, email: string, goals: string}} lead
- * @returns {Promise<{status: 'ok'}>}
- */
-export function submitLead(lead) {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      if (!lead || !lead.email) {
-        reject(new Error('Email manquant'));
-        return;
-      }
-
-      // Mock : on simule la persistance locale en journalisant dans la console.
-      // Dans une vraie application, on ferait un appel fetch/axios ici.
-      // eslint-disable-next-line no-console
-      console.info('Lead enregistré', lead);
-      resolve({ status: 'ok' });
-    }, DELAY_MS);
+export async function submitLead(lead) {
+  const response = await fetch(`${API_BASE_URL}/leads`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(lead),
   });
+
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => ({}));
+    const message = errorBody.message || "Impossible d'envoyer votre demande pour le moment.";
+    throw new Error(message);
+  }
+
+  return response.json();
 }
 
 export default submitLead;
