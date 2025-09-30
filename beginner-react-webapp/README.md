@@ -1,6 +1,34 @@
-# Getting Started with Create React App
+# CodingLearn – application complète (front & back)
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Cette application a été initialement créée avec [Create React App](https://github.com/facebook/create-react-app) et inclut désormais
+une API Node.js légère pour gérer l’authentification et la collecte des leads.
+
+## Démarrage rapide
+
+Dans un premier terminal, démarrez l’API :
+
+```bash
+npm run server
+```
+
+L’API répondra sur [http://localhost:4000](http://localhost:4000).
+
+Dans un second terminal, lancez le front-end React :
+
+```bash
+npm start
+```
+
+L’interface est disponible sur [http://localhost:3000](http://localhost:3000).
+
+Par défaut, le front s’attend à ce que l’API soit accessible via `http://localhost:4000/api`. Pour utiliser une autre URL,
+définissez la variable d’environnement `REACT_APP_API_BASE_URL` avant de démarrer le front.
+
+## Scripts disponibles
+
+Dans le répertoire du projet, les commandes suivantes sont proposées :
+
+### `npm start`
 
 ## Available Scripts
 
@@ -9,25 +37,28 @@ In the project directory, you can run:
 ### `npm start`
 
 Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+Ouvrez [http://localhost:3000](http://localhost:3000) pour visualiser l’interface.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+La page se rechargera automatiquement à chaque modification et les erreurs de lint apparaîtront dans la console.
+
+### `npm run server`
+
+Démarre l’API locale. Elle persiste les données dans `server/data/db.json` et expose les endpoints REST suivants :
+
+- `POST /api/auth/register` – création de compte
+- `POST /api/auth/login` – connexion
+- `GET /api/auth/me` – profil courant
+- `PATCH /api/users/me` – mise à jour du tableau de bord
+- `POST /api/leads` – enregistrement d’un lead marketing
 
 ### `npm test`
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Lance le test runner en mode interactif. Consultez la documentation
+[running tests](https://facebook.github.io/create-react-app/docs/running-tests) pour davantage d’informations.
 
 ### `npm run build`
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+Construit la version de production dans le dossier `build`. Les fichiers générés sont minifiés et prêts pour le déploiement.
 
 ### `npm run eject`
 

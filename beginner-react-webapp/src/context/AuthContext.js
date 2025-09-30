@@ -1,7 +1,15 @@
-import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 
-const USERS_KEY = 'codinglearn:users';
 const ACTIVE_USER_KEY = 'codinglearn:active-user';
+const TOKEN_STORAGE_KEY = 'codinglearn:auth-token';
+const API_BASE_URL = (process.env.REACT_APP_API_BASE_URL || 'http://localhost:4000/api').replace(/\/$/, '');
 
 const defaultProgress = {
   onboarding: 'not_started',
@@ -137,154 +145,250 @@ const writeStorage = (key, value) => {
   }
 };
 
-const loadUsers = () => readStorage(USERS_KEY, []);
-const persistUsers = (users) => writeStorage(USERS_KEY, users);
 const persistActiveUser = (user) => writeStorage(ACTIVE_USER_KEY, user);
+const persistToken = (token) => writeStorage(TOKEN_STORAGE_KEY, token);
+
+const sanitiseUserForUpdate = (user) => {
+  if (!user) {
+    return null;
+  }
+
+  return {
+    id: user.id,
+    email: user.email,
+    fullName: user.fullName,
+    cohort: user.cohort,
+    role: user.role,
+    progress: { ...user.progress },
+    dashboard: {
+      learningGoal: { ...user.dashboard.learningGoal },
+      tasks: user.dashboard.tasks.map((task) => ({ ...task })),
+      notes: user.dashboard.notes,
+    },
+    lastLoginAt: user.lastLoginAt,
+    previousLoginAt: user.previousLoginAt,
+    streakCount: user.streakCount,
+    createdAt: user.createdAt,
+  };
+};
 
 export const AuthProvider = ({ children }) => {
+  const [token, setToken] = useState(() => readStorage(TOKEN_STORAGE_KEY, null));
   const [user, setUser] = useState(() => hydrateUser(readStorage(ACTIVE_USER_KEY, null)));
   const [authError, setAuthError] = useState(null);
 
-  const syncActiveUser = useCallback((nextUser) => {
+  const callApi = useCallback(
+    async (endpoint, { method = 'GET', body, auth = false } = {}) => {
+      const headers = {};
+      const init = { method, headers };
+
+      if (auth) {
+        if (!token) {
+          throw new Error('AUTH_TOKEN_MISSING');
+        }
+        headers.Authorization = `Bearer ${token}`;
+      }
+
+      if (body !== undefined) {
+        headers['Content-Type'] = 'application/json';
+        init.body = JSON.stringify(body);
+      }
+
+      let response;
+      try {
+        response = await fetch(`${API_BASE_URL}/${endpoint}`, init);
+      } catch (error) {
+        const networkError = new Error('NETWORK_ERROR');
+        networkError.cause = error;
+        throw networkError;
+      }
+
+      let payload = null;
+      try {
+        payload = await response.json();
+      } catch (error) {
+        payload = null;
+      }
+
+      if (!response.ok) {
+        const message = payload?.message || 'Une erreur est survenue lors de la communication avec le serveur.';
+        const apiError = new Error(message);
+        apiError.status = response.status;
+        throw apiError;
+      }
+
+      return payload;
+    },
+    [token],
+  );
+
+  const syncActiveUser = useCallback((nextUser, nextToken) => {
     const hydratedUser = hydrateUser(nextUser);
     setUser(hydratedUser);
     persistActiveUser(hydratedUser);
+    const resolvedToken = nextToken ?? null;
+    setToken(resolvedToken);
+    persistToken(resolvedToken);
   }, []);
 
-  const updateCurrentUser = useCallback((project) => {
-    setUser((currentUser) => {
-      if (!currentUser) {
-        return currentUser;
+  useEffect(() => {
+    if (!token) {
+      persistActiveUser(null);
+      setUser(null);
+      return;
+    }
+
+    let isMounted = true;
+
+    (async () => {
+      try {
+        const data = await callApi('auth/me', { auth: true });
+        if (isMounted) {
+          const hydratedUser = hydrateUser(data.user);
+          setUser(hydratedUser);
+          persistActiveUser(hydratedUser);
+        }
+      } catch (error) {
+        if (isMounted) {
+          syncActiveUser(null, null);
+        }
+      }
+    })();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [callApi, syncActiveUser, token]);
+
+  const persistUserRemotely = useCallback(
+    async (nextUser) => {
+      if (!token || !nextUser) {
+        return;
       }
 
-      const nextUser = hydrateUser(project(currentUser));
-      persistActiveUser(nextUser);
-
-      const users = loadUsers();
-      const updatedUsers = users.map((storedUser) =>
-        storedUser.email === nextUser.email ? { ...nextUser, password: storedUser.password } : storedUser,
-      );
-
-      persistUsers(updatedUsers);
-      return nextUser;
-    });
-  }, []);
-
-  const register = useCallback(({ fullName, email, password, cohort }) => {
-    const trimmedName = fullName?.trim();
-    const trimmedEmail = email?.trim().toLowerCase();
-    const trimmedPassword = password?.trim();
-
-    if (!trimmedName || !trimmedEmail || !trimmedPassword) {
-      setAuthError('Merci de renseigner votre nom, email et mot de passe.');
-      return false;
-    }
-
-    const users = loadUsers();
-    const userAlreadyExists = users.some((existingUser) => existingUser.email === trimmedEmail);
-
-    if (userAlreadyExists) {
-      setAuthError('Un compte existe déjà avec cet email.');
-      return false;
-    }
-
-    const newUser = hydrateUser({
-      fullName: trimmedName,
-      email: trimmedEmail,
-      password: trimmedPassword,
-      cohort: cohort || 'Débutant',
-      role: 'Apprenant·e',
-      progress: { ...defaultProgress },
-      dashboard: {
-        learningGoal: { ...defaultLearningGoal },
-        tasks: cloneDefaultTasks(),
-        notes: '',
-      },
-      lastLoginAt: new Date().toISOString(),
-      previousLoginAt: null,
-      streakCount: 1,
-      createdAt: new Date().toISOString(),
-    });
-
-    persistUsers([...users, newUser]);
-    syncActiveUser(newUser);
-    setAuthError(null);
-    return true;
-  }, [syncActiveUser]);
-
-  const login = useCallback((email, password) => {
-    const trimmedEmail = email?.trim().toLowerCase();
-    const trimmedPassword = password?.trim();
-
-    if (!trimmedEmail || !trimmedPassword) {
-      setAuthError('Veuillez renseigner votre email et votre mot de passe.');
-      return false;
-    }
-
-    const users = loadUsers();
-    const existingUser = users.find(
-      (storedUser) => storedUser.email === trimmedEmail && storedUser.password === trimmedPassword,
-    );
-
-    if (!existingUser) {
-      setAuthError('Identifiants invalides. Vérifiez votre email ou votre mot de passe.');
-      return false;
-    }
-
-    const now = new Date();
-    const lastLoginDate = existingUser.lastLoginAt ? new Date(existingUser.lastLoginAt) : null;
-    const millisecondsPerDay = 1000 * 60 * 60 * 24;
-    let nextStreak = existingUser.streakCount ?? 1;
-
-    if (lastLoginDate) {
-      const diffInDays = Math.floor((now - lastLoginDate) / millisecondsPerDay);
-
-      if (diffInDays === 1) {
-        nextStreak += 1;
-      } else if (diffInDays > 1) {
-        nextStreak = 1;
+      try {
+        await callApi('users/me', {
+          method: 'PATCH',
+          body: { user: sanitiseUserForUpdate(nextUser) },
+          auth: true,
+        });
+      } catch (error) {
+        console.warn('Unable to synchronise profile with the server', error);
       }
-    } else {
-      nextStreak = 1;
-    }
+    },
+    [callApi, token],
+  );
 
-    const updatedUser = hydrateUser({
-      ...existingUser,
-      lastLoginAt: now.toISOString(),
-      previousLoginAt: existingUser.lastLoginAt ?? null,
-      streakCount: nextStreak,
-    });
+  const updateCurrentUser = useCallback(
+    (project) => {
+      setUser((currentUser) => {
+        if (!currentUser) {
+          return currentUser;
+        }
 
-    const updatedUsers = users.map((storedUser) =>
-      storedUser.email === updatedUser.email ? updatedUser : storedUser,
-    );
+        const nextUser = hydrateUser(project(currentUser));
+        persistActiveUser(nextUser);
+        void persistUserRemotely(nextUser);
+        return nextUser;
+      });
+    },
+    [persistUserRemotely],
+  );
 
-    persistUsers(updatedUsers);
-    syncActiveUser(updatedUser);
-    setAuthError(null);
-    return true;
-  }, [syncActiveUser]);
+  const register = useCallback(
+    async ({ fullName, email, password, cohort }) => {
+      const trimmedName = fullName?.trim();
+      const trimmedEmail = email?.trim().toLowerCase();
+      const trimmedPassword = password?.trim();
+
+      if (!trimmedName || !trimmedEmail || !trimmedPassword) {
+        setAuthError('Merci de renseigner votre nom, email et mot de passe.');
+        return false;
+      }
+
+      try {
+        const payload = await callApi('auth/register', {
+          method: 'POST',
+          body: {
+            fullName: trimmedName,
+            email: trimmedEmail,
+            password: trimmedPassword,
+            cohort,
+          },
+        });
+
+        syncActiveUser(payload.user, payload.token);
+        setAuthError(null);
+        return true;
+      } catch (error) {
+        if (error.message === 'NETWORK_ERROR') {
+          setAuthError('Impossible de contacter le serveur. Vérifiez votre connexion.');
+        } else {
+          setAuthError(error.message);
+        }
+        return false;
+      }
+    },
+    [callApi, syncActiveUser],
+  );
+
+  const login = useCallback(
+    async (email, password) => {
+      const trimmedEmail = email?.trim().toLowerCase();
+      const trimmedPassword = password?.trim();
+
+      if (!trimmedEmail || !trimmedPassword) {
+        setAuthError('Veuillez renseigner votre email et votre mot de passe.');
+        return false;
+      }
+
+      try {
+        const payload = await callApi('auth/login', {
+          method: 'POST',
+          body: {
+            email: trimmedEmail,
+            password: trimmedPassword,
+          },
+        });
+
+        syncActiveUser(payload.user, payload.token);
+        setAuthError(null);
+        return true;
+      } catch (error) {
+        if (error.message === 'NETWORK_ERROR') {
+          setAuthError('Impossible de contacter le serveur. Vérifiez votre connexion.');
+        } else {
+          setAuthError(error.message);
+        }
+        return false;
+      }
+    },
+    [callApi, syncActiveUser],
+  );
 
   const logout = useCallback(() => {
-    syncActiveUser(null);
+    syncActiveUser(null, null);
     setAuthError(null);
   }, [syncActiveUser]);
 
-  const updateProgress = useCallback((moduleKey, status) => {
-    updateCurrentUser((currentUser) => {
-      const safeStatus = ['not_started', 'in_progress', 'completed'].includes(status)
-        ? status
-        : 'not_started';
+  const updateProgress = useCallback(
+    (moduleKey, status) => {
+      updateCurrentUser((currentUser) => {
+        const safeStatus = ['not_started', 'in_progress', 'completed'].includes(status)
+          ? status
+          : 'not_started';
 
-      return {
-        ...currentUser,
-        progress: {
-          ...currentUser.progress,
-          [moduleKey]: safeStatus,
-        },
-      };
-    });
-  }, [updateCurrentUser]);
+        return {
+          ...currentUser,
+          progress: {
+            ...currentUser.progress,
+            [moduleKey]: safeStatus,
+          },
+        };
+      });
+    },
+    [updateCurrentUser],
+  );
 
   const updateLearningGoal = useCallback(
     (partialGoal) => {
@@ -418,4 +522,3 @@ export const useAuth = () => {
 
   return context;
 };
-
