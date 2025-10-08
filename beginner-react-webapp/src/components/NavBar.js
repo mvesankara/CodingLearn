@@ -5,10 +5,21 @@ import brandLogo from '../assets/codinglearn-logo.svg';
 
 import './NavBar.css';
 
-const NavBar = () => {
+const navLinks = [
+  { to: '/', label: 'Accueil', end: true },
+  { to: '/dashboard', label: 'Tableau de bord', protected: true },
+  { to: '/profile', label: 'Profil', protected: true },
+  { to: '/settings', label: 'Paramètres', protected: true },
+  { to: '/help', label: 'Aide' },
+  { to: '/about', label: 'À propos' },
+];
+
+const NavBar = ({ onToggleTheme = () => {}, theme = 'light' }) => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const LinkComponent = NavLink ?? Link;
+  const isNavLinkAvailable = typeof NavLink === 'function' || (typeof NavLink === 'object' && NavLink !== null);
+  const LinkComponent = isNavLinkAvailable ? NavLink : Link;
+  const navLinkClassName = isNavLinkAvailable ? ({ isActive }) => (isActive ? 'active' : undefined) : undefined;
 
   const handleLogout = () => {
     logout();
@@ -16,52 +27,47 @@ const NavBar = () => {
   };
 
   return (
-    <nav className="navbar">
-
-      <a className="navbar__brand" href="#accueil" aria-label="Revenir à l'accueil CodingLearn">
+    <nav className="navbar" aria-label="Navigation principale">
+      <LinkComponent
+        className="navbar__brand"
+        to="/"
+        aria-label="Revenir à l'accueil CodingLearn"
+        {...(isNavLinkAvailable ? { end: true } : {})}
+      >
         <img className="navbar__brand-mark" src={brandLogo} alt="Logo CodingLearn" />
         <span className="navbar__brand-text">CodingLearn</span>
-      </a>
-
-      <Link className="navbar__logo" to="/">
-        CodingLearn
-      </Link>
+      </LinkComponent>
 
       <ul className="navbar__links">
-        <li>
-          <LinkComponent to="/" {...(NavLink ? { end: true } : {})}>
-            Accueil
-          </LinkComponent>
-        </li>
-        <li>
-          <Link to="/#parcours">Parcours</Link>
-        </li>
-        <li>
-          <Link to="/#tarifs">Tarifs</Link>
-        </li>
-        <li>
-          <Link to="/#contact">Contact</Link>
-        </li>
-        <li>
-          <LinkComponent to="/about">À propos</LinkComponent>
-        </li>
+        {navLinks
+          .filter((item) => !item.protected || user)
+          .map(({ to, label, end }) => (
+            <li key={to}>
+              <LinkComponent to={to} {...(isNavLinkAvailable && end ? { end: true } : {})} className={navLinkClassName}>
+                {label}
+              </LinkComponent>
+            </li>
+          ))}
       </ul>
       <div className="navbar__actions">
+        <button
+          type="button"
+          className="navbar__theme-toggle"
+          onClick={onToggleTheme}
+          aria-pressed={theme === 'dark'}
+        >
+          {theme === 'dark' ? 'Mode clair' : 'Mode sombre'}
+        </button>
         {user ? (
-          <>
-            <LinkComponent className="navbar__link" to="/dashboard">
-              Tableau de bord
-            </LinkComponent>
-            <button type="button" className="navbar__logout" onClick={handleLogout}>
-              Se déconnecter
-            </button>
-          </>
+          <button type="button" className="navbar__logout" onClick={handleLogout}>
+            Se déconnecter
+          </button>
         ) : (
           <>
-            <LinkComponent className="navbar__link" to="/login">
+            <LinkComponent className="navbar__link" to="/login" {...(isNavLinkAvailable ? { end: true } : {})}>
               Se connecter
             </LinkComponent>
-            <LinkComponent className="navbar__cta" to="/register">
+            <LinkComponent className="navbar__cta" to="/register" {...(isNavLinkAvailable ? { end: true } : {})}>
               Commencer gratuitement
             </LinkComponent>
           </>

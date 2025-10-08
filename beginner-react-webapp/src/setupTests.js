@@ -10,19 +10,27 @@ jest.mock(
     const React = require('react');
 
     const PassThrough = ({ children }) => <div>{children}</div>;
+    const Anchor = React.forwardRef(({ to, children, className, end, ...rest }, ref) => (
+      <a
+        href={typeof to === 'string' ? to : '#'}
+        ref={ref}
+        className={typeof className === 'function' ? className({ isActive: false }) : className}
+        {...rest}
+      >
+        {children}
+      </a>
+    ));
 
     return {
       __esModule: true,
-      Link: ({ to, children, ...rest }) => (
-        <a href={typeof to === 'string' ? to : '#'} {...rest}>
-          {children}
-        </a>
-      ),
+      Link: Anchor,
+      NavLink: Anchor,
       MemoryRouter: PassThrough,
       BrowserRouter: PassThrough,
       Routes: PassThrough,
       Route: ({ element }) => element,
       useNavigate: () => () => {},
+      useLocation: () => ({ pathname: '/', search: '', hash: '', state: null, key: 'mock' }),
     };
   },
   { virtual: true }

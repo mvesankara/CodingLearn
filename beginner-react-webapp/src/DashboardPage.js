@@ -146,6 +146,38 @@ const supportContacts = [
   },
 ];
 
+const quickActions = [
+  {
+    id: 'notes',
+    label: 'Ajouter une note rapide',
+    description: 'Capturez une idée ou une question à aborder avec votre mentor.',
+  },
+  {
+    id: 'coaching',
+    label: 'Planifier un coaching',
+    description: 'Réservez une session live pour lever un blocage ou valider un livrable.',
+  },
+  {
+    id: 'share',
+    label: 'Partager mon avancement',
+    description: 'Publiez votre progression dans la communauté CodingLearn.',
+  },
+];
+
+const sidebarNavigation = [
+  { href: '#vue-d-ensemble', label: 'Vue d’ensemble' },
+  { href: '#organisation', label: 'Organisation' },
+  { href: '#modules', label: 'Parcours' },
+  { href: '#ressources', label: 'Ressources' },
+  { href: '#support', label: 'Support' },
+];
+
+const getInitials = (fullName = '') => {
+  const [first = '', second = ''] = fullName.split(' ');
+  const initials = `${first.charAt(0)}${second.charAt(0)}`.trim();
+  return initials.toUpperCase() || 'CL';
+};
+
 const DashboardPage = () => {
   const {
     user,
@@ -159,12 +191,16 @@ const DashboardPage = () => {
 
   const [customTaskLabel, setCustomTaskLabel] = useState('');
   const [customTaskCategory, setCustomTaskCategory] = useState('Personnel');
+  const [moduleQuery, setModuleQuery] = useState('');
+  const [feedback, setFeedback] = useState(null);
   const [goalForm, setGoalForm] = useState(() => ({
     focus: user?.dashboard?.learningGoal?.focus ?? '',
     hoursPerWeek: user?.dashboard?.learningGoal?.hoursPerWeek ?? 0,
     nextCheckpoint: user?.dashboard?.learningGoal?.nextCheckpoint ?? '',
   }));
   const [notesDraft, setNotesDraft] = useState(user?.dashboard?.notes ?? '');
+
+  const initials = useMemo(() => getInitials(user?.fullName), [user?.fullName]);
 
   useEffect(() => {
     setGoalForm({
@@ -177,6 +213,15 @@ const DashboardPage = () => {
   useEffect(() => {
     setNotesDraft(user?.dashboard?.notes ?? '');
   }, [user?.dashboard?.notes]);
+
+  useEffect(() => {
+    if (!feedback || typeof window === 'undefined') {
+      return undefined;
+    }
+
+    const timeoutId = window.setTimeout(() => setFeedback(null), 4000);
+    return () => window.clearTimeout(timeoutId);
+  }, [feedback]);
 
   const statistics = useMemo(() => {
     const totalModules = moduleDefinitions.length;
@@ -212,8 +257,23 @@ const DashboardPage = () => {
     };
   }, [user?.progress]);
 
+  const filteredModules = useMemo(() => {
+    if (!moduleQuery) {
+      return moduleDefinitions;
+    }
+
+    const normalisedQuery = moduleQuery.trim().toLowerCase();
+    return moduleDefinitions.filter((module) =>
+      [module.title, module.description, ...(module.skills ?? [])].some((field) =>
+        field.toLowerCase().includes(normalisedQuery),
+      ),
+    );
+  }, [moduleQuery]);
+
   const handleStatusChange = (moduleId, event) => {
     updateProgress(moduleId, event.target.value);
+    const label = moduleDefinitions.find((module) => module.id === moduleId)?.title ?? 'Module';
+    setFeedback(`Statut mis à jour pour « ${label} ». ✅`);
   };
 
   const handleGoalChange = (event) => {
@@ -232,6 +292,7 @@ const DashboardPage = () => {
         goalForm.hoursPerWeek === '' ? 0 : Number.isNaN(goalForm.hoursPerWeek) ? 0 : goalForm.hoursPerWeek,
     };
     updateLearningGoal(payload);
+    setFeedback('Votre objectif hebdomadaire a bien été mis à jour. 🚀');
   };
 
   const handleTaskSubmit = (event) => {
@@ -239,11 +300,32 @@ const DashboardPage = () => {
     const created = addTask(customTaskLabel, customTaskCategory);
     if (created) {
       setCustomTaskLabel('');
+      setFeedback('Nouvelle action ajoutée à votre liste.');
+    } else {
+      setFeedback('Ajoutez un intitulé avant d’enregistrer une action.');
     }
   };
 
   const handleNotesBlur = () => {
     updateNotes(notesDraft);
+    setFeedback('Vos notes ont été enregistrées.');
+  };
+
+  const handleQuickAction = (actionId) => {
+    switch (actionId) {
+      case 'notes':
+        document.getElementById('dashboard-notes')?.focus();
+        setFeedback('Vous pouvez écrire votre note et elle sera sauvegardée automatiquement.');
+        break;
+      case 'coaching':
+        setFeedback('Un mentor vous contactera pour planifier une session de coaching.');
+        break;
+      case 'share':
+        setFeedback('Partagez votre progression sur Discord dans #entraide-react.');
+        break;
+      default:
+        setFeedback("Action rapide effectuée.");
+    }
   };
 
   const formattedLastLogin = user?.lastLoginAt
@@ -268,26 +350,68 @@ const DashboardPage = () => {
 
   return (
     <div className="dashboard">
-      <header className="dashboard__header">
-        <div>
-          <h1>Bonjour {user?.fullName ?? 'apprenant·e'}</h1>
-          <p>
-            Programme <strong>{user?.cohort}</strong> · Dernière connexion : {formattedLastLogin}
-          </p>
-        </div>
-        <div className="dashboard__header-meta">
-          <div>
-            <span className="dashboard__header-label">Connexion précédente</span>
-            <strong>{formattedPreviousLogin}</strong>
+      <aside className="dashboard__sidebar" aria-label="Navigation du tableau de bord">
+        <div className="dashboard__sidebar-profile">
+          <div className="dashboard__sidebar-avatar" aria-hidden="true">
+            {initials}
           </div>
           <div>
-            <span className="dashboard__header-label">Série d’apprentissage</span>
-            <strong>{streakCount} jour{streakCount > 1 ? 's' : ''}</strong>
+            <p className="dashboard__sidebar-name">{user?.fullName}</p>
+            <p className="dashboard__sidebar-cohort">Promotion {user?.cohort}</p>
           </div>
         </div>
-      </header>
+        <nav>
+          <h2 className="sr-only">Navigation rapide</h2>
+          <ul>
+            {sidebarNavigation.map((item) => (
+              <li key={item.href}>
+                <a href={item.href}>{item.label}</a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+        <div className="dashboard__sidebar-actions">
+          {quickActions.map((action) => (
+            <button
+              type="button"
+              key={action.id}
+              onClick={() => handleQuickAction(action.id)}
+              className="dashboard__sidebar-button"
+            >
+              <span>{action.label}</span>
+              <small>{action.description}</small>
+            </button>
+          ))}
+        </div>
+      </aside>
 
-      <section className="dashboard__summary" aria-label="Statistiques de progression">
+      <div className="dashboard__content">
+        <header className="dashboard__header" id="vue-d-ensemble">
+          <div>
+            <h1>Bonjour {user?.fullName ?? 'apprenant·e'}</h1>
+            <p>
+              Programme <strong>{user?.cohort}</strong> · Dernière connexion : {formattedLastLogin}
+            </p>
+          </div>
+          <div className="dashboard__header-meta">
+            <div>
+              <span className="dashboard__header-label">Connexion précédente</span>
+              <strong>{formattedPreviousLogin}</strong>
+            </div>
+            <div>
+              <span className="dashboard__header-label">Série d’apprentissage</span>
+              <strong>{streakCount} jour{streakCount > 1 ? 's' : ''}</strong>
+            </div>
+          </div>
+        </header>
+
+        {feedback && (
+          <div className="dashboard__feedback" role="status" aria-live="polite">
+            {feedback}
+          </div>
+        )}
+
+        <section className="dashboard__summary" aria-label="Statistiques de progression">
         <div className="dashboard__card">
           <span className="dashboard__card-label">Modules complétés</span>
           <strong className="dashboard__card-value">{statistics.completed}</strong>
@@ -321,14 +445,14 @@ const DashboardPage = () => {
             {statistics.completedHours} h / {statistics.totalEstimatedHours} h estimées
           </p>
         </div>
-      </section>
+        </section>
 
-      <section className="dashboard__grid" aria-label="Organisation de la semaine">
-        <article className="dashboard__panel">
-          <header className="dashboard__panel-header">
-            <h2>Objectif de la semaine</h2>
-            <span className="dashboard__panel-tag">Planifier</span>
-          </header>
+        <section className="dashboard__grid" aria-label="Organisation de la semaine" id="organisation">
+          <article className="dashboard__panel">
+            <header className="dashboard__panel-header">
+              <h2>Objectif de la semaine</h2>
+              <span className="dashboard__panel-tag">Planifier</span>
+            </header>
           <form className="dashboard-goal" onSubmit={handleGoalSubmit}>
             <label htmlFor="goal-focus">Priorité</label>
             <input
@@ -466,15 +590,25 @@ const DashboardPage = () => {
         </article>
       </section>
 
-      <section className="dashboard__modules" aria-label="Modules du parcours">
-        <header className="dashboard__section-header">
-          <h2>Suivi du parcours</h2>
-          <p>
-            Ajustez votre progression module par module et consultez les livrables attendus pour
-            valider chaque étape.
-          </p>
-        </header>
-        {moduleDefinitions.map((module) => {
+        <section className="dashboard__modules" aria-label="Modules du parcours" id="modules">
+          <header className="dashboard__section-header">
+            <h2>Suivi du parcours</h2>
+            <p>
+              Ajustez votre progression module par module et consultez les livrables attendus pour
+              valider chaque étape.
+            </p>
+            <div className="dashboard__module-filter">
+              <label htmlFor="module-filter">Filtrer les modules</label>
+              <input
+                id="module-filter"
+                type="search"
+                value={moduleQuery}
+                onChange={(event) => setModuleQuery(event.target.value)}
+                placeholder="Rechercher un module, une compétence ou un livrable"
+              />
+            </div>
+          </header>
+        {filteredModules.map((module) => {
           const currentStatus = user?.progress?.[module.id] ?? 'not_started';
           return (
             <article key={module.id} className="dashboard-module">
@@ -511,14 +645,17 @@ const DashboardPage = () => {
             </article>
           );
         })}
+        {filteredModules.length === 0 && (
+          <p className="dashboard__empty">Aucun module ne correspond à votre recherche pour le moment.</p>
+        )}
       </section>
 
-      <section className="dashboard__resources" aria-label="Ressources complémentaires">
-        <header className="dashboard__section-header">
-          <h2>Ressources recommandées</h2>
-          <p>Renforcez vos compétences avec une sélection de contenus pertinents et actionnables.</p>
-        </header>
-        <div className="dashboard-resource__grid">
+        <section className="dashboard__resources" aria-label="Ressources complémentaires" id="ressources">
+          <header className="dashboard__section-header">
+            <h2>Ressources recommandées</h2>
+            <p>Renforcez vos compétences avec une sélection de contenus pertinents et actionnables.</p>
+          </header>
+          <div className="dashboard-resource__grid">
           {resourceLibrary.map((resource) => (
             <article key={resource.id} className="dashboard-resource">
               <header>
@@ -531,15 +668,15 @@ const DashboardPage = () => {
               </a>
             </article>
           ))}
-        </div>
+          </div>
       </section>
 
-      <section className="dashboard__support" aria-label="Support & accompagnement">
-        <header className="dashboard__section-header">
-          <h2>Votre équipe d’accompagnement</h2>
-          <p>Contactez rapidement la bonne personne selon votre besoin.</p>
-        </header>
-        <div className="dashboard-support__grid">
+        <section className="dashboard__support" aria-label="Support & accompagnement" id="support">
+          <header className="dashboard__section-header">
+            <h2>Votre équipe d’accompagnement</h2>
+            <p>Contactez rapidement la bonne personne selon votre besoin.</p>
+          </header>
+          <div className="dashboard-support__grid">
           {supportContacts.map((contact) => (
             <article key={contact.id} className="dashboard-support">
               <h3>{contact.role}</h3>
@@ -550,8 +687,9 @@ const DashboardPage = () => {
               </a>
             </article>
           ))}
-        </div>
-      </section>
+          </div>
+        </section>
+      </div>
     </div>
   );
 };
